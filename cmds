@@ -1,0 +1,89 @@
+{{TOC}}
+
+h2. old ch2 & new ch3
+
+h3. 예전 방식
+
+* docker hub 에 등록된 kauri/kubia 을 k8s 의 등록 -> pod & replicationcontrollers 이 생성됨.
+<pre>
+kubectl run kubia --image=kaurikim/kubia --port=8080 --generator=run/v1
+</pre>
+
+* "kubectl get pods",  "kubectl get replicationcontrollers "
+<pre>
+kauri@node1:~/kubernetes-in-action$ kubectl get pods
+NAME                                   READY   STATUS      RESTARTS   AGE
+kubia-5tcxp                            1/1     Running     0          11m
+kauri@node1:~/kubernetes-in-action$ kubectl get replicationcontrollers 
+NAME    DESIRED   CURRENT   READY   AGE
+kubia   1         1         1       9m30s
+kauri@node1:~/kubernetes-in-action$ 
+</pre>
+
+h3. Deploying your application
+
+* "kubectl create deployment kubia --image=kaurikim/kubia"
+    $ kubectl create deployment kubia --image=kaurikim/kubia
+    deployment.apps/kubia created
+
+* deployment, pods, replicationsets 이 생성됨.
+    kauri@node1:~/kubernetes-in-action$ kubectl get deployments.apps 
+    NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+    kubia                 1/1     1            1           40s
+    kauri@node1:~/kubernetes-in-action$ kubectl get pods
+    NAME                                   READY   STATUS      RESTARTS   AGE
+    kubia-7d66fcf5d5-xftmr                 1/1     Running     0          93s
+    kauri@node1:~/kubernetes-in-action$ kubectl get replicasets.apps 
+    NAME                             DESIRED   CURRENT   READY   AGE
+    kubia-7d66fcf5d5                 1         1         1       107s
+    kauri@node1:~/kubernetes-in-action$ 
+
+* !"deploy 절차":https://dpzbhybb2pdcj.cloudfront.net/luksa3/v-1/Figures/image041.jpg!
+
+h3.  Exposing your application to the world
+
+* "kubectl expose deployment kubia --type=LoadBalancer --port 8080"
+    $ kubectl expose deployment kubia --type=LoadBalancer --port 8080
+    service/kubia exposed
+    The create deployment
+    command that you ran previously created a Deployment object, whereas the expose deployment
+    command creates a Service object. This is what running the above command tells Kubernetes:
+
+
+*  LB 미설치로 아래와 같이 시도 
+    kauri@node1:~/kubernetes-in-action$ kubectl expose deployment kubia --port 8080
+    service/kubia exposed
+    kauri@node1:~/kubernetes-in-action$ 
+
+*  !"deploy 절차":https://dpzbhybb2pdcj.cloudfront.net/luksa3/v-1/Figures/image042.jpg!
+
+*  삭제: kubectl delete -n default service kubia
+
+h3. scaling
+
+* kubectl scale deployment kubia --replicas=3
+
+    kauri@node1:~/kubernetes-in-action$ kubectl scale deployment kubia --replicas=3
+    deployment.apps/kubia scaled
+    kauri@node1:~/kubernetes-in-action$  
+    kauri@node1:~/kubernetes-in-action$ kubectl get pods
+    NAME                                   READY   STATUS      RESTARTS   AGE
+    kubia-7d66fcf5d5-gk9kc                 1/1     Running     0          16s
+    kubia-7d66fcf5d5-n2jrx                 1/1     Running     0          16s
+    kubia-7d66fcf5d5-xftmr                 1/1     Running     0          27m
+    kauri@node1:~/kubernetes-in-action$ 
+    kauri@node1:~/kubernetes-in-action$ kubectl get deployments.apps
+    NAME                  READY   UP-TO-DATE   AVAILABLE   AGE
+    kubia                 3/3     3            3           29m
+    kauri@node1:~/kubernetes-in-action$ 
+    kauri@node1:~/kubernetes-in-action$  kubectl get pods -o wide
+    NAME                                   READY   STATUS      RESTARTS   AGE     IP             NODE     NOMINATED NODE   READINESS GATES
+    kubia-7d66fcf5d5-gk9kc                 1/1     Running     0          2m55s   10.233.90.21   node1    <none>           <none>
+    kubia-7d66fcf5d5-n2jrx                 1/1     Running     0          2m55s   10.233.90.20   node1    <none>           <none>
+    kubia-7d66fcf5d5-xftmr                 1/1     Running     0          29m     10.233.90.19   node1    <none>           <none>
+    kauri@node1:~/kubernetes-in-action$ 
+
+* Load balancing across multiple pods backing the same service
+** https://dpzbhybb2pdcj.cloudfront.net/luksa3/v-1/Figures/image044.jpg
+** https://dpzbhybb2pdcj.cloudfront.net/luksa3/v-1/Figures/image045.jpg
+
